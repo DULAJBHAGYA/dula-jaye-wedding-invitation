@@ -14,6 +14,8 @@ import type React from "react";
 import { MdDirections } from "react-icons/md";
 import { RiPenNibFill } from "react-icons/ri";
 import { PiCarSimpleFill } from "react-icons/pi";
+import Image from "next/image";
+
 
 // ─── Audio Player ─────────────────────────────────────────────────────────────
 function AudioPlayer() {
@@ -214,12 +216,12 @@ function ScheduleIcon({ type }: { type: string }) {
 
 // ─── RSVP Form ────────────────────────────────────────────────────────────────
 function RSVPForm() {
-  const SHEET_URL = "https://script.google.com/macros/s/AKfycbxCtwg4tFFEBKbb_GmPnrSiHa7M5BIcv9vRO_Ar7qHY8FNvzFX-t65_FZY6PERhJvlU/exec"; // 👈 Replace this
+  const SHEET_URL = "https://script.google.com/macros/s/AKfycbydPWCkScUkF43XM69PaVYfZUc-CIOTRe_43ziw95OVgtW-UbuYWr2i66o61qUvKg/exec"; // 👈 Replace this
 
   const [form, setForm] = useState({
     name: "", email: "", guests: "1", attending: "yes", message: "",
   });
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "duplicate" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "duplicate" | "updated" | "error">("idle");
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const handleChange = (
@@ -251,23 +253,19 @@ function RSVPForm() {
     if (!iframe) return;
 
     const onLoad = () => {
-      iframe.removeEventListener("load", onLoad);
-      document.body.removeChild(hiddenForm);
+  iframe.removeEventListener("load", onLoad);
+  document.body.removeChild(hiddenForm);
 
-      try {
-        // Try to read iframe content (works if same origin, otherwise catches)
-        const text = iframe.contentDocument?.body?.innerText || "";
-        const json = JSON.parse(text);
-        if (json.duplicate) setStatus("duplicate");
-        else if (json.success) setStatus("success");
-        else setStatus("error");
-      } catch {
-        // Cross-origin iframe content unreadable — but form submitted fine
-        // Apps Script redirects to its own domain after POST, so this is expected
-        // We optimistically show success since the POST went through
-        setStatus("success");
-      }
-    };
+  try {
+    const text = iframe.contentDocument?.body?.innerText || "";
+    const json = JSON.parse(text);
+    if (json.updated) setStatus("updated");       // ← new state
+    else if (json.success) setStatus("success");
+    else setStatus("error");
+  } catch {
+    setStatus("success"); // cross-origin fallback
+  }
+};
 
     iframe.addEventListener("load", onLoad);
     hiddenForm.submit();
@@ -277,47 +275,44 @@ function RSVPForm() {
   if (status === "success") {
     return (
       <div className="text-center py-14 flex flex-col items-center gap-5">
-        <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-          <circle cx="36" cy="36" r="34" stroke="#c9a84c" strokeWidth="1.5" />
-          <circle cx="36" cy="36" r="26" stroke="#e8d5a3" strokeWidth="1" />
-          <path d="M22 36 L31 45 L50 26" stroke="#c9a84c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">Ayubowan!</h3>
-        <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0">
-          Thank you, {form.name}.<br />We look forward to celebrating with you.
-        </p>
-      </div>
+  <Image
+    src="/images/ayubowan.png" // place image inside public/images
+    alt="Ayubowan"
+    width={120}
+    height={120}
+    className="object-contain"
+  />
+
+  <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">
+    Ayubowan!
+  </h3>
+
+  <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0">
+    Thank you, {form.name}.<br />
+    We look forward to celebrating with you.
+  </p>
+</div>
     );
   }
 
   // ── Already registered ──
-  if (status === "duplicate") {
-    return (
-      <div className="text-center py-14 flex flex-col items-center gap-5">
-        <div className="w-[72px] h-[72px] rounded-full border border-[#c9a84c] flex items-center justify-center">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-            <path d="M9 16 l2 2 l4-4" />
-          </svg>
-        </div>
-        <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">Already Registered</h3>
-        <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0 max-w-xs">
-          This email address has already been used to RSVP.<br />
-          <span className="text-[#c9a84c] font-semibold">Each guest may only register once.</span>
-        </p>
-        <button
-          onClick={() => { setStatus("idle"); setForm(f => ({ ...f, email: "" })); }}
-          className="mt-2 font-[Lato] text-[10px] tracking-[0.3em] uppercase text-[#a07c2e] underline underline-offset-4 bg-transparent border-none cursor-pointer hover:text-[#c9a84c] transition-colors"
-        >
-          Use a different email
-        </button>
-      </div>
-    );
-  }
-
+  if (status === "updated") {
+  return (
+    <div className="text-center py-14 flex flex-col items-center gap-5">
+      <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+        <circle cx="36" cy="36" r="34" stroke="#c9a84c" strokeWidth="1.5" />
+        <circle cx="36" cy="36" r="26" stroke="#e8d5a3" strokeWidth="1" />
+        <path d="M20 36 L28 28 L36 36 L44 28 L52 36" stroke="#c9a84c" strokeWidth="2"
+          strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+      </svg>
+      <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">RSVP Updated!</h3>
+      <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0">
+        Your response has been updated, {form.name}.<br />
+        We look forward to celebrating with you.
+      </p>
+    </div>
+  );
+}
   const inputClass = "w-full rounded-xl px-4 py-3 text-xs border border-[#e8d5a3] text-[#5a3e00] outline-none font-[Lato] box-border focus:border-[#c9a84c] transition-colors bg-white/60";
   const labelClass = "text-[10px] tracking-[0.4em] uppercase font-semibold text-[#c9a84c] font-[Lato]";
 
