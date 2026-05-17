@@ -12,6 +12,8 @@ import {
 } from "react-icons/fa";
 import type React from "react";
 import { MdDirections } from "react-icons/md";
+import { RiPenNibFill } from "react-icons/ri";
+import { PiCarSimpleFill } from "react-icons/pi";
 
 // ─── Audio Player ─────────────────────────────────────────────────────────────
 function AudioPlayer() {
@@ -385,9 +387,11 @@ function ScheduleIcon({ type }: { type: string }) {
   const icons: Record<string, React.ReactNode> = {
     sun: <FaSun className={iconClass} />,
     leaf: <FaLeaf className={iconClass} />,
+    pen: <RiPenNibFill className={iconClass}/>,
     candle: <FaRegLightbulb className={iconClass} />,
     door: <FaDoorOpen className={iconClass} />,
     plate: <FaUtensils className={iconClass} />,
+    car: <PiCarSimpleFill className={iconClass}/>,
     cake: <FaBirthdayCake className={iconClass} />,
   };
 
@@ -395,7 +399,10 @@ function ScheduleIcon({ type }: { type: string }) {
 }
 
 // ─── RSVP Form ────────────────────────────────────────────────────────────────
+// ─── RSVP Form ────────────────────────────────────────────────────────────────
 function RSVPForm() {
+  const SHEET_URL = "https://script.google.com/macros/s/AKfycbzkmML5njcNerLWKcBVy15t_8kP0MZvfgg-l5xV1k9Ujwm6Da0T56XRj4DSqxs9sAY/exec"; // 👈 paste here
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -404,42 +411,110 @@ function RSVPForm() {
     message: "",
   });
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [emailChecking, setEmailChecking] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
+  // Check for duplicate email on blur
+  const handleEmailBlur = async () => {
+    if (!form.email || !/\S+@\S+\.\S+/.test(form.email)) return;
+    setEmailChecking(true);
+    try {
+      const res = await fetch(`${SHEET_URL}?email=${encodeURIComponent(form.email)}`);
+      const data = await res.json();
+      setIsDuplicate(data.exists);
+      if (data.exists) {
+        setError("This email has already been registered. Each guest can only RSVP once.");
+      } else {
+        setError(null);
+      }
+    } catch {
+      // silently fail on check — will catch on submit
+    } finally {
+      setEmailChecking(false);
+    }
   };
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
-  ) =>
-    setForm((prev) => ({
-      ...prev,
-      [e.target.id || e.target.name]: e.target.value,
-    }));
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isDuplicate) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(SHEET_URL, {
+        method: "POST",
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+
+      if (data.duplicate) {
+        setIsDuplicate(true);
+        setError("This email has already been registered. Each guest can only RSVP once.");
+      } else if (data.success) {
+        setSubmitted(true);
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
+    } catch {
+      setError("Network error. Please check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    setForm((prev) => ({ ...prev, [e.target.id || e.target.name]: e.target.value }));
+    if (e.target.id === "email") {
+      setIsDuplicate(false);
+      setError(null);
+    }
+  };
+
+  // ── Already submitted state ──
   if (submitted) {
     return (
       <div className="text-center py-14 flex flex-col items-center gap-5">
         <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
           <circle cx="36" cy="36" r="34" stroke="#c9a84c" strokeWidth="1.5" />
           <circle cx="36" cy="36" r="26" stroke="#e8d5a3" strokeWidth="1" />
-          <path
-            d="M22 36 L31 45 L50 26"
-            stroke="#c9a84c"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          <path d="M22 36 L31 45 L50 26" stroke="#c9a84c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">Ayubowan!</h3>
+        <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0">
+          Thank you, {form.name}.<br />We look forward to celebrating with you.
+        </p>
+      </div>
+    );
+  }
+
+  // ── Already registered state ──
+  if (isDuplicate && error) {
+    return (
+      <div className="text-center py-14 flex flex-col items-center gap-5">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+          <circle cx="36" cy="36" r="34" stroke="#c9a84c" strokeWidth="1.5" />
+          <circle cx="36" cy="36" r="26" stroke="#e8d5a3" strokeWidth="1" />
+          {/* Calendar check icon */}
+          <text x="36" y="42" textAnchor="middle" fontSize="26" fill="#c9a84c">📋</text>
         </svg>
         <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">
-          Ayubowan!
+          Already Registered
         </h3>
-        <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0">
-          Thank you, {form.name}.<br />
-          We look forward to celebrating with you.
+        <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0 max-w-xs">
+          This email address has already been used to RSVP.<br />
+          <span className="text-[#c9a84c] font-semibold">Each guest may only register once.</span>
         </p>
+        <button
+          onClick={() => { setIsDuplicate(false); setError(null); setForm(f => ({ ...f, email: "" })); }}
+          className="mt-2 font-[Lato] text-[10px] tracking-[0.3em] uppercase text-[#a07c2e] underline underline-offset-4 bg-transparent border-none cursor-pointer"
+        >
+          Use a different email
+        </button>
       </div>
     );
   }
@@ -450,89 +525,82 @@ function RSVPForm() {
     "text-[10px] tracking-[0.4em] uppercase font-semibold text-[#c9a84c] font-[Lato]";
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-5 max-w-lg mx-auto"
-    >
-      {[
-        {
-          id: "name",
-          label: "Full Name",
-          type: "text",
-          placeholder: "Your name",
-        },
-        {
-          id: "email",
-          label: "Email Address",
-          type: "email",
-          placeholder: "you@example.com",
-        },
-      ].map(({ id, label, type, placeholder }) => (
-        <div key={id} className="flex flex-col gap-1.5">
-          <label className={labelClass}>{label}</label>
-          <input
-            id={id}
-            type={type}
-            required
-            value={form[id as keyof typeof form]}
-            onChange={handleChange}
-            placeholder={placeholder}
-            className={inputClass}
-          />
-        </div>
-      ))}
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 max-w-lg mx-auto">
+      <div className="flex flex-col gap-1.5">
+        <label className={labelClass}>Full Name</label>
+        <input
+          id="name" type="text" required
+          value={form.name} onChange={handleChange}
+          placeholder="Your name" className={inputClass}
+        />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className={labelClass}>
+          Email Address
+          {emailChecking && (
+            <span className="ml-2 text-[#a07c2e] normal-case tracking-normal">checking…</span>
+          )}
+        </label>
+        <input
+          id="email" type="email" required
+          value={form.email} onChange={handleChange}
+          onBlur={handleEmailBlur}
+          placeholder="you@example.com"
+          className={`${inputClass} ${isDuplicate ? "border-red-300 bg-red-50" : ""}`}
+        />
+        {isDuplicate && (
+          <p className="text-[11px] text-red-400 font-[Lato] m-0">
+            This email is already registered.
+          </p>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         {[
           {
-            name: "attending",
-            label: "Attending?",
+            name: "attending", label: "Attending?",
             options: [
               { value: "yes", label: "Joyfully Accept" },
               { value: "no", label: "Regretfully Decline" },
             ],
           },
           {
-            name: "guests",
-            label: "No. of Guests",
-            options: [1, 2, 3, 4].map((n) => ({
-              value: String(n),
-              label: String(n),
-            })),
+            name: "guests", label: "No. of Guests",
+            options: [1, 2, 3, 4].map((n) => ({ value: String(n), label: String(n) })),
           },
         ].map(({ name, label, options }) => (
           <div key={name} className="flex flex-col gap-1.5">
             <label className={labelClass}>{label}</label>
             <select
-              name={name}
-              value={form[name as keyof typeof form]}
-              onChange={handleChange}
-              className={inputClass}
+              name={name} value={form[name as keyof typeof form]}
+              onChange={handleChange} className={inputClass}
             >
-              {options.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
+              {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
         ))}
       </div>
+
       <div className="flex flex-col gap-1.5">
         <label className={labelClass}>Message to the Couple</label>
         <textarea
-          name="message"
-          rows={3}
-          value={form.message}
-          onChange={handleChange}
-          placeholder="Share your wishes..."
+          name="message" rows={3} value={form.message}
+          onChange={handleChange} placeholder="Share your wishes…"
           className={`${inputClass} resize-none`}
         />
       </div>
+
+      {error && !isDuplicate && (
+        <p className="text-[11px] text-red-400 font-[Lato] text-center m-0">{error}</p>
+      )}
+
       <button
         type="submit"
-        className="bg-[rgba(58,38,0,0.90)] text-white border-none rounded-xl py-4 text-[11px] tracking-[0.25em] uppercase font-semibold font-[Lato] cursor-pointer hover:opacity-90 transition-opacity"
+        disabled={loading || isDuplicate}
+        className="bg-[rgba(58,38,0,0.90)] text-white border-none rounded-xl py-4 text-[11px] tracking-[0.25em] uppercase font-semibold font-[Lato] cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Confirm Attendance
+        {loading ? "Sending…" : "Confirm Attendance"}
       </button>
     </form>
   );
@@ -632,43 +700,43 @@ export default function WeddingPage() {
   }, []);
 
   const schedule = [
-    {
-      time: "6:00 AM",
-      title: "Nekath — Auspicious Moment",
-      icon: "sun",
-      desc: "The sacred hour begins. Dulaj and Jayanithya exchange garlands under the guidance of the astrologer's chosen nekath, witnessed by elders and family.",
-    },
-    {
-      time: "7:00 AM",
-      title: "Poruwa Ceremony",
-      icon: "leaf",
-      desc: "The couple ascends the Poruwa, the traditional decorated platform, for the Sinhalese wedding ritual. Blessings are chanted and betel leaves exchanged.",
-    },
-    {
-      time: "8:30 AM",
-      title: "Pirith and Blessings",
-      icon: "candle",
-      desc: "Buddhist monks chant Pirith, protective verses, to bless the union. Family members tie the magul daama (auspicious thread) around the couple's wrists.",
-    },
-    {
-      time: "10:00 AM",
-      title: "Reception Doors Open",
-      icon: "door",
-      desc: "Guests are warmly welcomed into the beautifully decorated reception hall with traditional Sri Lankan hospitality and floral arrangements.",
-    },
-    {
-      time: "12:00 PM",
-      title: "Wedding Lunch",
-      icon: "plate",
-      desc: "A grand Sri Lankan feast featuring rice and curry, kiribath, and traditional sweets, enjoyed together as one family.",
-    },
-    {
-      time: "3:00 PM",
-      title: "Cake Cutting and Celebrations",
-      icon: "cake",
-      desc: "The couple cuts the wedding cake and the afternoon fills with music, dancing, and cherished moments with loved ones.",
-    },
-  ];
+  {
+    time: "8:56 AM",
+    title: "Couple Arrives at the Venue",
+    icon: "door",
+    desc: "Dulaj and Jayanithya arrive at the beautifully decorated venue and warmly welcome family and guests before the auspicious celebrations begin.",
+  },
+  {
+    time: "9:54 AM",
+    title: "Signing of the Marriage Register",
+    icon: "pen",
+    desc: "In the presence of witnesses and loved ones, the couple officially signs the marriage register, marking the beginning of their new journey together.",
+  },
+  {
+    time: "10:21 AM",
+    title: "Poruwa Ceremony",
+    icon: "sun",
+    desc: "The couple ascends the traditional Poruwa for the sacred Sinhalese wedding rituals, exchanging vows and blessings amidst drumming, chants, and family traditions.",
+  },
+  {
+    time: "12:20 PM",
+    title: "Wedding Lunch",
+    icon: "plate",
+    desc: "Guests enjoy a delightful Sri Lankan wedding feast filled with traditional flavors, joyful conversations, and warm hospitality.",
+  },
+  {
+    time: "1:50 PM",
+    title: "Cake Cutting & Champagne Fountain",
+    icon: "cake",
+    desc: "Dulaj and Jayanithya celebrate with a joyful cake-cutting ceremony followed by a sparkling champagne fountain shared with family and friends.",
+  },
+  {
+    time: "4:04 PM",
+    title: "Couple Departs",
+    icon: "car",
+    desc: "As the celebrations come to a close, the newlyweds bid farewell to their guests and leave the venue surrounded by blessings and heartfelt wishes.",
+  },
+];
 
   return (
     <>
@@ -1088,7 +1156,7 @@ export default function WeddingPage() {
               {/* Monogram text */}
               <text
                 x="150"
-                y="146"
+                y="155"
                 textAnchor="middle"
                 style={{
                   fontFamily: "'Cormorant Garamond', Georgia, serif",
@@ -1101,20 +1169,7 @@ export default function WeddingPage() {
               >
                 D &amp; J
               </text>
-              <text
-                x="150"
-                y="159"
-                textAnchor="middle"
-                style={{
-                  fontFamily: "'Lato', Helvetica, sans-serif",
-                  fontSize: "7px",
-                  fill: "#c9a030",
-                  letterSpacing: "2.5px",
-                  fontWeight: 400,
-                }}
-              >
-                2026
-              </text>
+              
 
               {/* Orbiting gold dot accents */}
               <g opacity="0.5">
