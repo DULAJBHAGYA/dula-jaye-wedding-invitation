@@ -1,29 +1,45 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { FaBirthdayCake, FaDoorOpen, FaHeart, FaLeaf, FaRegLightbulb, FaSun, FaUtensils } from "react-icons/fa";
-import { IoSunnyOutline } from "react-icons/io5";
+import {
+  FaBirthdayCake,
+  FaDoorOpen,
+  FaHeart,
+  FaLeaf,
+  FaRegLightbulb,
+  FaSun,
+  FaUtensils,
+} from "react-icons/fa";
+import type React from "react";
 import { MdDirections } from "react-icons/md";
 
 // ─── Audio Player ─────────────────────────────────────────────────────────────
 function AudioPlayer() {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.loop = true;
-    audio.volume = 0.45;
-    const handleTimeUpdate = () => {
-      if (audio.duration)
-        setProgress((audio.currentTime / audio.duration) * 100);
-    };
-    audio.addEventListener("timeupdate", handleTimeUpdate);
-    return () => audio.removeEventListener("timeupdate", handleTimeUpdate);
-  }, []);
+  const audio = audioRef.current;
+
+  if (!audio) return;
+
+  audio.loop = true;
+  audio.volume = 0.45;
+
+  const handleTimeUpdate = () => {
+    if (audio.duration) {
+      setProgress((audio.currentTime / audio.duration) * 100);
+    }
+  };
+
+  audio.addEventListener("timeupdate", handleTimeUpdate);
+
+  return () => {
+    audio.removeEventListener("timeupdate", handleTimeUpdate);
+  };
+}, []);
 
   const toggle = () => {
     const audio = audioRef.current;
@@ -1311,8 +1327,7 @@ export default function WeddingPage() {
                 className="inline-flex items-center gap-2.5 px-7 py-3 rounded-2xl text-[10px] font-semibold tracking-[0.25em] uppercase text-white bg-[rgba(58,38,0,0.90)] no-underline font-[Lato] hover:opacity-90 transition-opacity"
               >
                 Get Directions
-                <MdDirections className="w-5 h-5"/>
-
+                <MdDirections className="w-5 h-5" />
               </a>
             </div>
           </div>
