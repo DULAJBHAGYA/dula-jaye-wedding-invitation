@@ -842,31 +842,15 @@ export default function WeddingPage() {
         {/* Soft warm veil over marble in hero only */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#fdfaec]/70 via-[#fdfaec]/70 to-[#fdfaec]/90 z-0 pointer-events-none" />
         {/* Desktop: left floral (mirrored) */}
-        <img
-          src="/D_J_01__2476_x_3280_px_.png"
-          alt=""
-          aria-hidden="true"
-          className="hero-floral-left floral-img"
-        />
+        
 
         {/* Desktop: right floral */}
-        <img
-          src="/D_J_01__2476_x_3280_px_.png"
-          alt=""
-          aria-hidden="true"
-          className="hero-floral-right floral-img"
-        />
+       
 
         {/* Centre content */}
         <div className="relative z-10 max-w-2xl mx-auto w-full">
           {/* Mobile-only: single top floral */}
-          <img
-            src="/D_J_01__2476_x_3280_px_.png"
-            alt=""
-            aria-hidden="true"
-            className="hero-floral-mobile floral-img"
-          />
-
+         
           <p className="a1 font-[Lato] text-[11px] tracking-[0.5em] uppercase text-[#c9a84c] mb-2">
             We're Getting Married
           </p>
