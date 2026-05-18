@@ -216,7 +216,7 @@ function ScheduleIcon({ type }: { type: string }) {
 
 // ─── RSVP Form ────────────────────────────────────────────────────────────────
 function RSVPForm() {
-  const SHEET_URL = "https://script.google.com/macros/s/AKfycbydPWCkScUkF43XM69PaVYfZUc-CIOTRe_43ziw95OVgtW-UbuYWr2i66o61qUvKg/exec"; // 👈 Replace this
+  const SHEET_URL = "https://script.google.com/macros/s/AKfycbydPWCkScUkF43XM69PaVYfZUc-CIOTRe_43ziw95OVgtW-UbuYWr2i66o61qUvKg/exec";
 
   const [form, setForm] = useState({
     name: "", email: "", guests: "1", attending: "yes", message: "",
@@ -232,7 +232,6 @@ function RSVPForm() {
     e.preventDefault();
     setStatus("loading");
 
-    // Build a hidden form that targets the hidden iframe — no CORS preflight
     const hiddenForm = document.createElement("form");
     hiddenForm.method = "POST";
     hiddenForm.action = SHEET_URL;
@@ -248,77 +247,72 @@ function RSVPForm() {
 
     document.body.appendChild(hiddenForm);
 
-    // Listen for iframe load = Apps Script responded
     const iframe = iframeRef.current;
     if (!iframe) return;
 
     const onLoad = () => {
-  iframe.removeEventListener("load", onLoad);
-  document.body.removeChild(hiddenForm);
+      iframe.removeEventListener("load", onLoad);
+      document.body.removeChild(hiddenForm);
 
-  try {
-    const text = iframe.contentDocument?.body?.innerText || "";
-    const json = JSON.parse(text);
-    if (json.updated) setStatus("updated");       // ← new state
-    else if (json.success) setStatus("success");
-    else setStatus("error");
-  } catch {
-    setStatus("success"); // cross-origin fallback
-  }
-};
+      try {
+        const text = iframe.contentDocument?.body?.innerText || "";
+        const json = JSON.parse(text);
+        if (json.updated) setStatus("updated");
+        else if (json.success) setStatus("success");
+        else setStatus("error");
+      } catch {
+        setStatus("success");
+      }
+    };
 
     iframe.addEventListener("load", onLoad);
     hiddenForm.submit();
   };
 
-  // ── Success ──
   if (status === "success") {
     return (
       <div className="text-center py-14 flex flex-col items-center gap-5">
-  <Image
-    src="/images/ayubowan.png" // place image inside public/images
-    alt="Ayubowan"
-    width={120}
-    height={120}
-    className="object-contain"
-  />
-
-  <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">
-    Ayubowan!
-  </h3>
-
-  <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0">
-    Thank you, {form.name}.<br />
-    We look forward to celebrating with you.
-  </p>
-</div>
+        <Image
+          src="/images/ayubowan.png"
+          alt="Ayubowan"
+          width={120}
+          height={120}
+          className="object-contain"
+        />
+        <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">
+          Ayubowan!
+        </h3>
+        <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0">
+          Thank you, {form.name}.<br />
+          We look forward to celebrating with you.
+        </p>
+      </div>
     );
   }
 
-  // ── Already registered ──
   if (status === "updated") {
-  return (
-    <div className="text-center py-14 flex flex-col items-center gap-5">
-      <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-        <circle cx="36" cy="36" r="34" stroke="#c9a84c" strokeWidth="1.5" />
-        <circle cx="36" cy="36" r="26" stroke="#e8d5a3" strokeWidth="1" />
-        <path d="M20 36 L28 28 L36 36 L44 28 L52 36" stroke="#c9a84c" strokeWidth="2"
-          strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      </svg>
-      <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">RSVP Updated!</h3>
-      <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0">
-        Your response has been updated, {form.name}.<br />
-        We look forward to celebrating with you.
-      </p>
-    </div>
-  );
-}
+    return (
+      <div className="text-center py-14 flex flex-col items-center gap-5">
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+          <circle cx="36" cy="36" r="34" stroke="#c9a84c" strokeWidth="1.5" />
+          <circle cx="36" cy="36" r="26" stroke="#e8d5a3" strokeWidth="1" />
+          <path d="M20 36 L28 28 L36 36 L44 28 L52 36" stroke="#c9a84c" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+        </svg>
+        <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">RSVP Updated!</h3>
+        <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0">
+          Your response has been updated, {form.name}.<br />
+          We look forward to celebrating with you.
+        </p>
+      </div>
+    );
+  }
+
   const inputClass = "w-full rounded-xl px-4 py-3 text-xs border border-[#e8d5a3] text-[#5a3e00] outline-none font-[Lato] box-border focus:border-[#c9a84c] transition-colors bg-white/60";
   const labelClass = "text-[10px] tracking-[0.4em] uppercase font-semibold text-[#c9a84c] font-[Lato]";
 
   return (
     <>
-      {/* Hidden iframe — receives the form POST response, bypasses CORS */}
       <iframe ref={iframeRef} name="rsvp-iframe" style={{ display: "none" }} title="rsvp-target" />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 max-w-lg mx-auto">
@@ -397,14 +391,17 @@ function RSVPForm() {
 }
 
 // ─── Map Embed ────────────────────────────────────────────────────────────────
+// Full-width: no padding, no max-width, bleeds to screen edges
 function MapEmbed() {
   return (
-    <div className="overflow-hidden border-2 border-[rgba(58,38,0,0.90)] shadow-2xl shadow-[#c9a84c]/20">
+    <div className="overflow-hidden border-y border-[rgba(58,38,0,0.90)] shadow-2xl shadow-[#c9a84c]/20">
       <iframe
         src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3952.1677878710634!2d80.64148437500593!3d7.877506092144833!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3afca538e953f979%3A0xdb117c22883cffd9!2sHotel%20Golden%20Ray%20-%20Dambulla!5e0!3m2!1sen!2slk!4v1778488876984!5m2!1sen!2slk"
-        width="600" height="420"
+        width="100%"
+        height="420"
         className="border-0 w-full block"
-        allowFullScreen loading="lazy"
+        allowFullScreen
+        loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
       />
     </div>
@@ -547,6 +544,13 @@ export default function WeddingPage() {
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
+
+        /* ── Full-width map bleed ── */
+        .venue-map-bleed {
+          margin-left: calc(-50vw + 50%);
+          margin-right: calc(-50vw + 50%);
+          width: 100vw;
+        }
       `}</style>
 
       <NavDots sections={navSections} active={activeSection} />
@@ -582,7 +586,7 @@ export default function WeddingPage() {
         <div className="max-w-2xl mx-auto text-center">
           <p data-reveal className="font-[Lato] text-[10px] tracking-[0.5em] uppercase text-[#c9a84c] mb-2">Our Story</p>
           <h2 data-reveal data-delay="1" className="font-[Cormorant_Garamond] text-[clamp(2rem,5vw,3rem)] font-light text-[#5a3e00] m-0">Two Hearts, One Journey</h2>
-          <p data-reveal data-delay="2" className="font-[Lato] text-[#7a5a00] leading-loose text-[15px] mb-10">
+          <p data-reveal data-delay="2" className="font-[Lato] text-[#7a5a00] font-thin leading-loose text-[15px] mb-10">
             In the warmth of a Sri Lankan sunrise, two souls found each other. Dulaj and Jayanithya's love story blossomed amidst the fragrance of jasmine and temple flowers, a bond blessed by family, faith, and the timeless traditions of our beautiful island. Together, they walk forward into a life adorned with love, laughter, and the grace of a thousand blessings.
           </p>
           <div data-reveal data-delay="3" className="mx-auto mb-8 w-48 h-48">
@@ -647,7 +651,6 @@ export default function WeddingPage() {
                 <div className="pb-6 flex-1 border-b border-[#e8d5a3]/60">
                   <p className="font-[Lato] text-[10px] tracking-[0.3em] uppercase text-[#c9a84c] mb-1">{item.time}</p>
                   <h3 className="font-[Marcellus] text-[1.05rem] text-[#5a3e00] mb-2 mt-0">{item.title}</h3>
-                  <p className="font-[Lato] text-[13.5px] text-[#7a5a00] leading-relaxed m-0">{item.desc}</p>
                 </div>
               </div>
             </div>
@@ -690,8 +693,9 @@ export default function WeddingPage() {
       </Section>
 
       {/* ══ VENUE ══ */}
-      <Section id="venue" className="section-light py-24 px-6">
-        <div className="max-w-2xl mx-auto">
+      <Section id="venue" className="section-light py-24 overflow-hidden">
+        {/* Venue title & button — keep padded */}
+        <div className="max-w-2xl mx-auto px-6">
           <div className="text-center mb-6">
             <p data-reveal className="font-[Lato] text-[10px] tracking-[0.5em] uppercase text-[#c9a84c] mb-2">Venue</p>
             <h2 data-reveal data-delay="1" className="font-[Cormorant_Garamond] text-[clamp(2rem,5vw,3rem)] font-light text-[#5a3e00] m-0">Where We Celebrate</h2>
@@ -706,7 +710,11 @@ export default function WeddingPage() {
               </a>
             </div>
           </div>
-          <div data-reveal data-delay="3"><MapEmbed /></div>
+        </div>
+
+        {/* Full-width map bleed */}
+        <div data-reveal data-delay="3" className="venue-map-bleed">
+          <MapEmbed />
         </div>
       </Section>
 
@@ -717,7 +725,7 @@ export default function WeddingPage() {
             <p data-reveal className="font-[Lato] text-[10px] tracking-[0.5em] uppercase text-[#c9a84c] mb-2">Kindly Reply</p>
             <h2 data-reveal data-delay="1" className="font-[Cormorant_Garamond] text-[clamp(2rem,5vw,3rem)] font-light text-[#5a3e00] m-0">RSVP</h2>
             <p data-reveal data-delay="2" className="font-[Lato] text-sm text-[#7a5a00] mt-3">
-              Please reply by <span className="font-semibold text-[#c9a84c]">01st June 2026</span>
+              Please reply by <span className="font-semibold text-[#c9a84c]">15th June 2026</span>
             </p>
           </div>
           <div data-reveal data-delay="3" className="rounded-3xl p-5 shadow-2xl shadow-[#c9a84c]/10">
