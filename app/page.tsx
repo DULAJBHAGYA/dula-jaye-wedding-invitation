@@ -745,7 +745,7 @@ export default function WeddingPage() {
           <p className="font-[Lato] text-[10px] tracking-[0.3em] uppercase text-[#e8d5a3]/40 mb-2">Contact For More Information</p>
           <div className="flex flex-col items-center gap-1">
             <a href="tel:+94768323678" className="font-[Cormorant_Garamond] text-[#f5ecc8]/90 text-lg no-underline hover:text-[#e8d5a3] transition-colors">Dulaj — +94 76 832 3678</a>
-            <a href="tel:+94771234567" className="font-[Cormorant_Garamond] text-[#f5ecc8]/90 text-lg no-underline hover:text-[#e8d5a3] transition-colors">Jayanithya — +94 77 123 4567</a>
+            <a href="tel:+94765607953" className="font-[Cormorant_Garamond] text-[#f5ecc8]/90 text-lg no-underline hover:text-[#e8d5a3] transition-colors">Jayanithya — +94 76 560 7953</a>
           </div>
         </div>
         <p className="font-[Lato] text-[11px] text-[#e8d5a3]/25 m-0">Crafted with love</p>
