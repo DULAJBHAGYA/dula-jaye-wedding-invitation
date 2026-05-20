@@ -66,7 +66,7 @@ function AudioPlayer() {
           <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
         </svg>
         <span className="font-[Lato] text-[10px] tracking-[0.25em] uppercase text-[#a07c2e]">
-          {playing ? "Now Playing" : "Forever Begins"}
+          {playing ? "Now Playing" : "Until I found you"}
         </span>
         <button onClick={toggleMute} aria-label={muted ? "Unmute" : "Mute"} className="ml-1 cursor-pointer bg-transparent border-none p-0 flex items-center">
           {muted ? (
