@@ -29,13 +29,34 @@ function AudioPlayer() {
     if (!audio) return;
     audio.loop = true;
     audio.volume = 0.45;
+
+    // Auto-play on first user interaction (bypasses browser autoplay block)
+    const playOnce = () => {
+      audio.play().then(() => setPlaying(true)).catch(() => {});
+      window.removeEventListener("click",      playOnce);
+      window.removeEventListener("scroll",     playOnce);
+      window.removeEventListener("touchstart", playOnce);
+      window.removeEventListener("keydown",    playOnce);
+    };
+    window.addEventListener("click",      playOnce, { once: true });
+    window.addEventListener("scroll",     playOnce, { once: true });
+    window.addEventListener("touchstart", playOnce, { once: true });
+    window.addEventListener("keydown",    playOnce, { once: true });
+
     const handleTimeUpdate = () => {
       if (audio.duration) {
         setProgress((audio.currentTime / audio.duration) * 100);
       }
     };
     audio.addEventListener("timeupdate", handleTimeUpdate);
-    return () => audio.removeEventListener("timeupdate", handleTimeUpdate);
+
+    return () => {
+      audio.removeEventListener("timeupdate", handleTimeUpdate);
+      window.removeEventListener("click",      playOnce);
+      window.removeEventListener("scroll",     playOnce);
+      window.removeEventListener("touchstart", playOnce);
+      window.removeEventListener("keydown",    playOnce);
+    };
   }, []);
 
   const toggle = () => {
@@ -60,13 +81,13 @@ function AudioPlayer() {
 
   return (
     <div className="inline-flex flex-col items-center gap-3 backdrop-blur-xl rounded-3xl pt-16 py-4">
-      <audio ref={audioRef} src="/wedding-music.mp3" preload="auto" />
+      <audio ref={audioRef} src="/audios/bgMusic.mp3" preload="auto" />
       <div className="flex items-center gap-2">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a07c2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
         </svg>
         <span className="font-[Lato] text-[10px] tracking-[0.25em] uppercase text-[#a07c2e]">
-          {playing ? "Now Playing" : "Until I found you"}
+          {playing ? "Now Playing" : "Forever"}
         </span>
         <button onClick={toggleMute} aria-label={muted ? "Unmute" : "Mute"} className="ml-1 cursor-pointer bg-transparent border-none p-0 flex items-center">
           {muted ? (
@@ -391,7 +412,6 @@ function RSVPForm() {
 }
 
 // ─── Map Embed ────────────────────────────────────────────────────────────────
-// Full-width: no padding, no max-width, bleeds to screen edges
 function MapEmbed() {
   return (
     <div className="overflow-hidden border-y border-[rgba(58,38,0,0.90)] shadow-2xl shadow-[#c9a84c]/20">
@@ -455,9 +475,9 @@ export default function WeddingPage() {
     { time: "8:56 AM",  title: "Couple Arrives at the Venue",         icon: "door",  desc: "Dulaj and Jayanithya arrive at the beautifully decorated venue and warmly welcome family and guests before the auspicious celebrations begin." },
     { time: "9:54 AM",  title: "Signing of the Marriage Register",    icon: "pen",   desc: "In the presence of witnesses and loved ones, the couple officially signs the marriage register, marking the beginning of their new journey together." },
     { time: "10:21 AM", title: "Poruwa Ceremony",                     icon: "sun",   desc: "The couple ascends the traditional Poruwa for the sacred Sinhalese wedding rituals, exchanging vows and blessings amidst drumming, chants, and family traditions." },
-    { time: "12:20 PM", title: "Wedding Lunch",                       icon: "plate", desc: "Guests enjoy a delightful Sri Lankan wedding feast filled with traditional flavors, joyful conversations, and warm hospitality." },
+    { time: "12:15 PM", title: "Wedding Lunch",                       icon: "plate", desc: "Guests enjoy a delightful Sri Lankan wedding feast filled with traditional flavors, joyful conversations, and warm hospitality." },
     { time: "1:50 PM",  title: "Cake Cutting & Champagne Fountain",   icon: "cake",  desc: "Dulaj and Jayanithya celebrate with a joyful cake-cutting ceremony followed by a sparkling champagne fountain shared with family and friends." },
-    { time: "4:04 PM",  title: "Couple Departs",                      icon: "car",   desc: "As the celebrations come to a close, the newlyweds bid farewell to their guests and leave the venue surrounded by blessings and heartfelt wishes." },
+    { time: "4:30 PM",  title: "Couple Departs",                      icon: "car",   desc: "As the celebrations come to a close, the newlyweds bid farewell to their guests and leave the venue surrounded by blessings and heartfelt wishes." },
   ];
 
   return (
@@ -694,7 +714,6 @@ export default function WeddingPage() {
 
       {/* ══ VENUE ══ */}
       <Section id="venue" className="section-light py-24 overflow-hidden">
-        {/* Venue title & button — keep padded */}
         <div className="max-w-2xl mx-auto px-6">
           <div className="text-center mb-6">
             <p data-reveal className="font-[Lato] text-[10px] tracking-[0.5em] uppercase text-[#c9a84c] mb-2">Venue</p>
@@ -711,8 +730,6 @@ export default function WeddingPage() {
             </div>
           </div>
         </div>
-
-        {/* Full-width map bleed */}
         <div data-reveal data-delay="3" className="venue-map-bleed">
           <MapEmbed />
         </div>
@@ -725,7 +742,7 @@ export default function WeddingPage() {
             <p data-reveal className="font-[Lato] text-[10px] tracking-[0.5em] uppercase text-[#c9a84c] mb-2">Kindly Reply</p>
             <h2 data-reveal data-delay="1" className="font-[Cormorant_Garamond] text-[clamp(2rem,5vw,3rem)] font-light text-[#5a3e00] m-0">RSVP</h2>
             <p data-reveal data-delay="2" className="font-[Lato] text-sm text-[#7a5a00] mt-3">
-              Please reply by <span className="font-semibold text-[#c9a84c]">15th June 2026</span>
+              Please reply by <span className=" text-[#c9a84c]">15th June 2026</span>
             </p>
           </div>
           <div data-reveal data-delay="3" className="rounded-3xl p-5 shadow-2xl shadow-[#c9a84c]/10">
