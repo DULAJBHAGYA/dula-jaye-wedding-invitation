@@ -12,9 +12,10 @@ import {
 } from "react-icons/fa";
 import type React from "react";
 import { MdDirections } from "react-icons/md";
-import { RiPenNibFill } from "react-icons/ri";
+import { RiCupFill, RiPenNibFill } from "react-icons/ri";
 import { PiCarSimpleFill } from "react-icons/pi";
 import Image from "next/image";
+import { BsArrowDownShort } from "react-icons/bs";
 
 
 // ─── Audio Player ─────────────────────────────────────────────────────────────
@@ -24,40 +25,52 @@ function AudioPlayer() {
   const [muted, setMuted] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.loop = true;
-    audio.volume = 0.45;
+useEffect(() => {
+  const audio = audioRef.current;
+  if (!audio) return;
 
-    // Auto-play on first user interaction (bypasses browser autoplay block)
-    const playOnce = () => {
-      audio.play().then(() => setPlaying(true)).catch(() => {});
-      window.removeEventListener("click",      playOnce);
-      window.removeEventListener("scroll",     playOnce);
-      window.removeEventListener("touchstart", playOnce);
-      window.removeEventListener("keydown",    playOnce);
-    };
-    window.addEventListener("click",      playOnce, { once: true });
-    window.addEventListener("scroll",     playOnce, { once: true });
-    window.addEventListener("touchstart", playOnce, { once: true });
-    window.addEventListener("keydown",    playOnce, { once: true });
+  audio.loop = true;
+  audio.volume = 0.45;
 
-    const handleTimeUpdate = () => {
-      if (audio.duration) {
-        setProgress((audio.currentTime / audio.duration) * 100);
-      }
-    };
-    audio.addEventListener("timeupdate", handleTimeUpdate);
+  const playOnce = () => {
+    audio.play().then(() => setPlaying(true)).catch(() => {});
+    window.removeEventListener("click", playOnce);
+    window.removeEventListener("scroll", playOnce);
+    window.removeEventListener("touchstart", playOnce);
+    window.removeEventListener("keydown", playOnce);
+  };
 
-    return () => {
-      audio.removeEventListener("timeupdate", handleTimeUpdate);
-      window.removeEventListener("click",      playOnce);
-      window.removeEventListener("scroll",     playOnce);
-      window.removeEventListener("touchstart", playOnce);
-      window.removeEventListener("keydown",    playOnce);
-    };
-  }, []);
+  window.addEventListener("click", playOnce, { once: true });
+  window.addEventListener("scroll", playOnce, { once: true });
+  window.addEventListener("touchstart", playOnce, { once: true });
+  window.addEventListener("keydown", playOnce, { once: true });
+
+  const handleVisibilityChange = () => {
+    if (document.hidden) {
+      audio.pause();
+      setPlaying(false);
+    }
+  };
+
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+
+  const handleTimeUpdate = () => {
+    if (audio.duration) {
+      setProgress((audio.currentTime / audio.duration) * 100);
+    }
+  };
+
+  audio.addEventListener("timeupdate", handleTimeUpdate);
+
+  return () => {
+    audio.removeEventListener("timeupdate", handleTimeUpdate);
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    window.removeEventListener("click", playOnce);
+    window.removeEventListener("scroll", playOnce);
+    window.removeEventListener("touchstart", playOnce);
+    window.removeEventListener("keydown", playOnce);
+  };
+}, []);
 
   const toggle = () => {
     const audio = audioRef.current;
@@ -80,7 +93,7 @@ function AudioPlayer() {
   const toggleMute  = () => { const a = audioRef.current; if (!a) return; a.muted = !muted; setMuted(!muted); };
 
   return (
-    <div className="inline-flex flex-col items-center gap-3 backdrop-blur-xl rounded-3xl pt-16 py-4">
+    <div className="inline-flex flex-col items-center gap-3 backdrop-blur-xl rounded-3xl pt-4 py-4">
       <audio ref={audioRef} src="/audios/bgMusic.mp3" preload="auto" />
       <div className="flex items-center gap-2">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a07c2e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -230,7 +243,7 @@ function ScheduleIcon({ type }: { type: string }) {
     sun: <FaSun className={iconClass} />, leaf: <FaLeaf className={iconClass} />,
     pen: <RiPenNibFill className={iconClass} />, candle: <FaRegLightbulb className={iconClass} />,
     door: <FaDoorOpen className={iconClass} />, plate: <FaUtensils className={iconClass} />,
-    car: <PiCarSimpleFill className={iconClass} />, cake: <FaBirthdayCake className={iconClass} />,
+    car: <PiCarSimpleFill className={iconClass} />, cake: <FaBirthdayCake className={iconClass} />, tea: <RiCupFill className={iconClass} />,
   };
   return <>{icons[type] ?? <FaSun className={iconClass} />}</>;
 }
@@ -290,7 +303,8 @@ function RSVPForm() {
     hiddenForm.submit();
   };
 
-  if (status === "success") {
+  // ── Accepted ──────────────────────────────────────────────────────────────
+  if (status === "success" && form.attending === "yes") {
     return (
       <div className="text-center py-14 flex flex-col items-center gap-5">
         <Image
@@ -311,6 +325,37 @@ function RSVPForm() {
     );
   }
 
+  // ── Declined ──────────────────────────────────────────────────────────────
+  if (status === "success" && form.attending === "no") {
+    return (
+      <div className="text-center py-14 flex flex-col items-center gap-5">
+        {/* Gentle lotus / farewell icon */}
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+          <circle cx="36" cy="36" r="34" stroke="#c9a84c" strokeWidth="1.5" strokeOpacity="0.5" />
+          <circle cx="36" cy="36" r="26" stroke="#e8d5a3" strokeWidth="1" strokeOpacity="0.4" />
+          {/* Simple heart outline */}
+          <path
+            d="M36 48 C36 48 20 38 20 27 C20 21.5 24.5 17 30 17 C32.8 17 35.3 18.3 36 19.5 C36.7 18.3 39.2 17 42 17 C47.5 17 52 21.5 52 27 C52 38 36 48 36 48Z"
+            stroke="#c9a84c"
+            strokeWidth="1.4"
+            fill="none"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity="0.7"
+          />
+        </svg>
+        <h3 className="font-[Cormorant_Garamond] text-[#c9a84c] text-2xl m-0">
+          We'll Miss You
+        </h3>
+        <p className="font-[Lato] text-[#7a5a00] text-sm leading-7 m-0 max-w-xs">
+          Thank you for letting us know, {form.name}.<br />
+          We're sorry you can't make it, but we truly appreciate your warm wishes and will be thinking of you on our special day.
+        </p>
+      </div>
+    );
+  }
+
+  // ── Updated ───────────────────────────────────────────────────────────────
   if (status === "updated") {
     return (
       <div className="text-center py-14 flex flex-col items-center gap-5">
@@ -462,6 +507,7 @@ export default function WeddingPage() {
   ];
 
   const [activeSection, setActiveSection] = useState("hero");
+
   useEffect(() => {
     const io = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) setActiveSection(e.target.id); }),
@@ -472,12 +518,12 @@ export default function WeddingPage() {
   }, []);
 
   const schedule = [
-    { time: "8:56 AM",  title: "Couple Arrives at the Venue",         icon: "door",  desc: "Dulaj and Jayanithya arrive at the beautifully decorated venue and warmly welcome family and guests before the auspicious celebrations begin." },
-    { time: "9:54 AM",  title: "Signing of the Marriage Register",    icon: "pen",   desc: "In the presence of witnesses and loved ones, the couple officially signs the marriage register, marking the beginning of their new journey together." },
-    { time: "10:21 AM", title: "Poruwa Ceremony",                     icon: "sun",   desc: "The couple ascends the traditional Poruwa for the sacred Sinhalese wedding rituals, exchanging vows and blessings amidst drumming, chants, and family traditions." },
-    { time: "12:15 PM", title: "Wedding Lunch",                       icon: "plate", desc: "Guests enjoy a delightful Sri Lankan wedding feast filled with traditional flavors, joyful conversations, and warm hospitality." },
-    { time: "1:50 PM",  title: "Cake Cutting & Champagne Fountain",   icon: "cake",  desc: "Dulaj and Jayanithya celebrate with a joyful cake-cutting ceremony followed by a sparkling champagne fountain shared with family and friends." },
-    { time: "4:30 PM",  title: "Couple Departs",                      icon: "car",   desc: "As the celebrations come to a close, the newlyweds bid farewell to their guests and leave the venue surrounded by blessings and heartfelt wishes." },
+    { time: "8:53 AM",  title: "Couple Arrives at the Venue",         icon: "door",  desc: "Dulaj and Jayanithya arrive at the beautifully decorated venue and warmly welcome family and guests before the auspicious celebrations begin." },
+    { time: "09:06 AM", title: "Poruwa Ceremony",                     icon: "sun",   desc: "The couple ascends the traditional Poruwa for the sacred Sinhalese wedding rituals, exchanging vows and blessings amidst drumming, chants, and family traditions." },
+    { time: "09:50 AM", title: "Tea Table", icon: "tea",  desc: "The newlyweds capture timeless memories with professional photography and videography, preserving the joy and beauty of their special day." },
+    { time: "12:00 PM", title: "Wedding Lunch",                       icon: "plate", desc: "Guests enjoy a delightful Sri Lankan wedding feast filled with traditional flavors, joyful conversations, and warm hospitality." },
+    { time: "1:30 PM",  title: "Cake Cutting & Champagne Fountain",   icon: "cake",  desc: "Dulaj and Jayanithya celebrate with a joyful cake-cutting ceremony followed by a sparkling champagne fountain shared with family and friends." },
+    { time: "4:04 PM",  title: "Couple Departs",                      icon: "car",   desc: "As the celebrations come to a close, the newlyweds bid farewell to their guests and leave the venue surrounded by blessings and heartfelt wishes." },
   ];
 
   return (
@@ -508,6 +554,7 @@ export default function WeddingPage() {
         .a1{animation:fadeUp 1.1s ease 0.1s both} .a2{animation:fadeUp 1.1s ease 0.3s both}
         .a3{animation:fadeUp 1.1s ease 0.5s both} .a4{animation:fadeUp 1.1s ease 0.7s both}
         .a5{animation:fadeUp 1.1s ease 0.9s both} .a6{animation:fadeUp 1.1s ease 1.1s both}
+        .a7{animation:fadeUp 1.1s ease 1.3s both}
         @keyframes softPulse { 0%,100%{box-shadow:0 0 0 0 rgba(201,168,76,0.28);} 50%{box-shadow:0 0 0 9px rgba(201,168,76,0);} }
         .gb-card { position:relative; background:rgba(255,252,240,0.85); backdrop-filter:blur(14px); }
         .gb-card::before {
@@ -571,6 +618,10 @@ export default function WeddingPage() {
           margin-right: calc(-50vw + 50%);
           width: 100vw;
         }
+
+        /* ── Hero RSVP button hover scale ── */
+        .hero-rsvp-btn { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .hero-rsvp-btn:hover { opacity: 0.88; transform: translateY(-1px) scale(1.03); }
       `}</style>
 
       <NavDots sections={navSections} active={activeSection} />
@@ -578,7 +629,7 @@ export default function WeddingPage() {
       {/* ══ HERO ══ */}
       <Section id="hero" className="min-h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#fdfaec]/70 via-[#fdfaec]/70 to-[#fdfaec]/90 z-0 pointer-events-none" />
-        <div className="relative z-10 max-w-2xl mx-auto w-full">
+        <div className="relative mt-20 z-10 max-w-2xl mx-auto w-full">
           <p className="a1 font-[Lato] text-[11px] tracking-[0.5em] uppercase text-[#c9a84c] mb-2">We're Getting Married</p>
           <h1 className="a2 hero-name pt-8">Dulaj</h1>
           <div className="a3 flex items-center justify-center gap-5 py-2">
@@ -590,8 +641,32 @@ export default function WeddingPage() {
           <div className="a5 mt-5">
             <p className="font-[Marcellus] text-[#7a5a00] text-large tracking-[0.18em]">06 &middot; August &middot; 2026</p>
           </div>
-          <div className="a6 mt-9 flex justify-center"><AudioPlayer /></div>
-          <div className="scroll-cue mt-10 flex flex-col items-center gap-2 opacity-40">
+
+          {/* Audio Player — reduced top margin */}
+          <div className="a6 mt-5 flex justify-center"><AudioPlayer /></div>
+
+          {/* RSVP Now button — inline, below audio player */}
+          <div className="a7 mt-5 flex justify-center">
+            <a
+              href="#rsvp"
+              className="hero-rsvp-btn inline-flex items-center gap-1 px-4 py-2 rounded-2xl no-underline font-[Lato]"
+              style={{
+                color: "#c9a84c",
+                border: "1.5px solid ",
+                backdropFilter: "blur(12px)",
+                boxShadow: "0 6px 24px rgba(201,168,76,0.2)",
+                fontSize: "10px",
+                fontWeight: 600,
+                letterSpacing: "0.35em",
+                textTransform: "uppercase",
+              }}
+            >
+              RSVP Now
+             <BsArrowDownShort className="w-5 h-5"/>
+            </a>
+          </div>
+
+          <div className="scroll-cue mt-8 flex flex-col items-center gap-2 opacity-40">
             <span className="text-[9px] uppercase tracking-[0.3em] text-[#7a5a00] font-[Cormorant_Garamond]">Scroll</span>
             <div className="w-px h-7 bg-gradient-to-b from-transparent to-[#7a5a00]" />
             <svg width="14" height="8" viewBox="0 0 14 8" fill="none">
@@ -607,7 +682,7 @@ export default function WeddingPage() {
           <p data-reveal className="font-[Lato] text-[10px] tracking-[0.5em] uppercase text-[#c9a84c] mb-2">Our Story</p>
           <h2 data-reveal data-delay="1" className="font-[Cormorant_Garamond] text-[clamp(2rem,5vw,3rem)] font-light text-[#5a3e00] m-0">Two Hearts, One Journey</h2>
           <p data-reveal data-delay="2" className="font-[Lato] text-[#7a5a00] font-thin leading-loose text-[15px] mb-10">
-            In the warmth of a Sri Lankan sunrise, two souls found each other. Dulaj and Jayanithya's love story blossomed amidst the fragrance of jasmine and temple flowers, a bond blessed by family, faith, and the timeless traditions of our beautiful island. Together, they walk forward into a life adorned with love, laughter, and the grace of a thousand blessings.
+            Surrounded by love, family, and the beauty of tradition, Dulaj and Jayanithya begin a new chapter together. With laughter, understanding, and endless love, they step hand in hand into a future filled with beautiful memories and countless blessings.
           </p>
           <div data-reveal data-delay="3" className="mx-auto mb-8 w-48 h-48">
             <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" role="img">
@@ -742,7 +817,7 @@ export default function WeddingPage() {
             <p data-reveal className="font-[Lato] text-[10px] tracking-[0.5em] uppercase text-[#c9a84c] mb-2">Kindly Reply</p>
             <h2 data-reveal data-delay="1" className="font-[Cormorant_Garamond] text-[clamp(2rem,5vw,3rem)] font-light text-[#5a3e00] m-0">RSVP</h2>
             <p data-reveal data-delay="2" className="font-[Lato] text-sm text-[#7a5a00] mt-3">
-              Please reply by <span className=" text-[#c9a84c]">15th June 2026</span>
+              Please reply by <span className=" text-[#c9a84c]">7th June 2026</span>
             </p>
           </div>
           <div data-reveal data-delay="3" className="rounded-3xl p-5 shadow-2xl shadow-[#c9a84c]/10">
