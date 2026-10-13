@@ -250,7 +250,7 @@ function ScheduleIcon({ type }: { type: string }) {
 
 // ─── RSVP Form ────────────────────────────────────────────────────────────────
 function RSVPForm() {
-  const SHEET_URL = "https://script.google.com/macros/s/AKfycbydPWCkScUkF43XM69PaVYfZUc-CIOTRe_43ziw95OVgtW-UbuYWr2i66o61qUvKg/exec";
+  const SHEET_URL = "##";
 
   const [form, setForm] = useState({
     name: "", email: "", guests: "1", attending: "yes", message: "",
